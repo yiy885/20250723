@@ -22,20 +22,23 @@
           @click="startTimer"
         />
         <!-- 只有倒數中才能按暫停 -->
-        <v-btn :disabled="status !== STATUS.COUNTING" icon="mdi-pause" />
+        <v-btn :disabled="status !== STATUS.COUNTING" icon="mdi-pause" @click="pause" />
         <!-- 目前有事項才能跳過 -->
-        <v-btn :disabled="list.currentItem.length === 0" icon="mdi-skip-next" />
+        <v-btn :disabled="list.currentItem.length === 0" icon="mdi-skip-next" @click="finish" />
       </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script setup>
+import { useWebNotification } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import DigitNumber from '@/components/DigitNumber.vue'
 import { useListStore } from '@/stores/list'
+import { useSettingsStore } from '@/stores/settings'
 
 const list = useListStore()
+const settings = useSettingsStore()
 
 // 倒數狀態
 const STATUS = {
@@ -62,10 +65,40 @@ const startTimer = () => {
   timer = setInterval(() => {
     list.countdown()
 
-    if (list.timeleft <= 0) {
-      clearInterval(timer)
+    if (list.timeleft < 0) {
+      finish(timer)
     }
   }, 1000)
+}
+
+const pause = () => {
+  clearInterval(timer)
+  status.value = STATUS.PAUSE
+}
+
+const finish = () => {
+  clearInterval(timer)
+
+  status.value = STATUS.STOP
+
+  const audio = new Audio()
+  audio.src = settings.selectedAlarm.file
+  audio.play()
+
+  const { show, isSupported } = useWebNotification({
+    title: '事項完成',
+    body: list.currentItem,
+    icon: new URL('@/assets/tomato.png', import.meta.url).href,
+  })
+  if (isSupported.value) {
+    show()
+  }
+
+  list.setFinishItem()
+
+  if (list.items.length > 0) {
+    startTimer()
+  }
 }
 
 const timeLeftText = computed(() => {

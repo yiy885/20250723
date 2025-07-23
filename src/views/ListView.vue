@@ -63,6 +63,27 @@
       <v-col cols="12">
         <h1 class="text-center">已完成</h1>
       </v-col>
+      <v-col cols="12">
+        <v-table>
+          <thead>
+            <tr>
+              <th>事項</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="list.finishedItems.length === 0">
+              <td colspan="2">沒有事項</td>
+            </tr>
+            <tr v-for="item in list.finishedItems" :key="item.id">
+              <td>{{ item.text }}</td>
+              <td>
+                <v-btn icon="mdi-delete" @click="list.delFinishedItem(item.id)" />
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-col>
     </v-row>
   </v-container>
 </template>
